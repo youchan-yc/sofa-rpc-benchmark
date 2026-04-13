@@ -83,7 +83,7 @@ public class MosnApiClient {
      * @param protocol    protocol name (e.g. "bolt", "tri")
      */
     public void publishService(String serviceName, String group, String host, int port, String protocol) {
-        String body = "{\"serviceName\":\"" + serviceName + "\""
+        String body = "{\"serviceName\":\"" + serviceName + ":1.0" + "\""
             + ",\"group\":\"" + group + "\""
             + ",\"host\":\"" + host + "\""
             + ",\"port\":" + port
