@@ -104,7 +104,7 @@ public class MosnApiClient {
      * @return list of endpoint addresses (e.g. ["localhost:12220"])
      */
     public List<SubscribeEndpoint> subscribeService(String serviceName, String group) {
-        String body = "{\"serviceName\":\"" + serviceName + "\",\"group\":\"" + group + "\"}";
+        String body = "{\"serviceName\":\"" + serviceName + ":1.0" + "\",\"group\":\"" + group + "\"}";
         String response = doPost("/services/subscribe", body);
         LOGGER.info("mosn3 subscribeService response: serviceName={}, response={}", serviceName, response);
         return parseSubscribeEndpoints(response);
