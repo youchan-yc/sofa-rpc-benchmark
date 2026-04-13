@@ -16,6 +16,7 @@
  */
 package com.alipay.sofa.rpc.benchmark;
 
+import com.alipay.sofa.rpc.benchmark.mosn.MosnApiClient;
 import com.alipay.sofa.rpc.benchmark.proto.SofaUserServiceTriple;
 import com.alipay.sofa.rpc.benchmark.service.UserServiceProtoImpl;
 import com.alipay.sofa.rpc.config.ProviderConfig;
@@ -37,10 +38,11 @@ public class TripleProtoServer {
 
     public static void main(String[] args) {
         String port = System.getProperty("server.port", "50052");
+        int portInt = Integer.parseInt(port);
 
         ServerConfig serverConfig = new ServerConfig()
             .setProtocol("tri")
-            .setPort(Integer.parseInt(port))
+            .setPort(portInt)
             .setDaemon(false);
 
         ProviderConfig<SofaUserServiceTriple.IUserService> providerConfig = new ProviderConfig<SofaUserServiceTriple.IUserService>()
@@ -52,5 +54,15 @@ public class TripleProtoServer {
 
         LOGGER.info("Triple proto server started on port {}", port);
         LOGGER.info("Service: {}", SofaUserServiceTriple.getServiceName());
+
+        // Register service to mosn3 sidecar if mosn.enabled=true
+        if (Boolean.getBoolean("mosn.enabled")) {
+            String appName = System.getProperty("mosn.app.name", "sofa-rpc-benchmark-server");
+            MosnApiClient mosnClient = new MosnApiClient();
+            mosnClient.configApplication(appName);
+            mosnClient.publishService(SofaUserServiceTriple.IUserService.class.getName(), "", "127.0.0.1", portInt,
+                "tri");
+            LOGGER.info("Service registered to mosn3: {}", SofaUserServiceTriple.getServiceName());
+        }
     }
 }

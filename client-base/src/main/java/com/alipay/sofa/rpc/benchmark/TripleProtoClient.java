@@ -17,6 +17,7 @@
 package com.alipay.sofa.rpc.benchmark;
 
 import com.alipay.sofa.common.utils.StringUtil;
+import com.alipay.sofa.rpc.benchmark.mosn.MosnApiClient;
 import com.alipay.sofa.rpc.benchmark.proto.BatchCreateResponse;
 import com.alipay.sofa.rpc.benchmark.proto.CreateUserRequest;
 import com.alipay.sofa.rpc.benchmark.proto.GetUserRequest;
@@ -42,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -67,6 +69,24 @@ public class TripleProtoClient {
         if (StringUtil.isNotBlank(threadNum)) {
             CONCURRENCY = Integer.parseInt(threadNum);
         }
+
+        // When mosn.enabled=true, subscribe via mosn3 API and use the returned address
+        if (Boolean.getBoolean("mosn.enabled")) {
+            String appName = System.getProperty("mosn.app.name", "sofa-rpc-benchmark-client");
+            MosnApiClient mosnClient = new MosnApiClient();
+            mosnClient.configApplication(appName);
+            List<MosnApiClient.SubscribeEndpoint> endpoints = mosnClient.subscribeService(
+                SofaUserServiceTriple.IUserService.class.getName(), "");
+            if (!endpoints.isEmpty()) {
+                MosnApiClient.SubscribeEndpoint endpoint = endpoints.get(0);
+                host = endpoint.getHost();
+                port = String.valueOf(endpoint.getPort());
+                LOGGER.info("Subscribed via mosn3, using endpoint: {}", endpoint.getAddress());
+            } else {
+                LOGGER.warn("No endpoints returned from mosn3 subscribe, falling back to direct address");
+            }
+        }
+
         String nonProxyHosts = System.getProperty("http.nonProxyHosts", "");
         if (!nonProxyHosts.contains("127.0.0.1")) {
             System.setProperty("http.nonProxyHosts",

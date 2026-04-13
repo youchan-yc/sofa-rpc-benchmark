@@ -19,6 +19,7 @@ package com.alipay.sofa.rpc.benchmark;
 import com.alipay.sofa.rpc.benchmark.bean.Page;
 import com.alipay.sofa.rpc.benchmark.bean.User;
 import com.alipay.sofa.rpc.benchmark.client.AbstractClient;
+import com.alipay.sofa.rpc.benchmark.mosn.MosnApiClient;
 import com.alipay.sofa.rpc.benchmark.service.UserService;
 import com.alipay.sofa.rpc.benchmark.utils.JMHHelper;
 import com.alipay.sofa.common.utils.StringUtil;
@@ -37,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @State(Scope.Benchmark)
@@ -52,17 +54,35 @@ public class BoltClient extends AbstractClient {
 
     public BoltClient() {
         String port = System.getProperty("server.port", "12200");
+        String host = System.getProperty("server.host", "127.0.0.1");
         String threadNum = System.getProperty("thread.num");
         if (StringUtil.isNotBlank(threadNum)) {
             CONCURRENCY = Integer.parseInt(threadNum);
         }
+
+        // When mosn.enabled=true, subscribe via mosn3 API and use the returned address
+        if (Boolean.getBoolean("mosn.enabled")) {
+            String appName = System.getProperty("mosn.app.name", "sofa-rpc-benchmark-client");
+            MosnApiClient mosnClient = new MosnApiClient();
+            mosnClient.configApplication(appName);
+            List<MosnApiClient.SubscribeEndpoint> endpoints = mosnClient.subscribeService(
+                UserService.class.getName(), "");
+            if (!endpoints.isEmpty()) {
+                MosnApiClient.SubscribeEndpoint endpoint = endpoints.get(0);
+                host = endpoint.getHost();
+                port = String.valueOf(endpoint.getPort());
+                LOGGER.info("Subscribed via mosn3, using endpoint: {}", endpoint.getAddress());
+            } else {
+                LOGGER.warn("No endpoints returned from mosn3 subscribe, falling back to direct address");
+            }
+        }
+
         consumerConfig = new ConsumerConfig<UserService>()
             .setRepeatedReferLimit(10)
-            .setInterfaceId(UserService.class.getName()) // 指定接口
-            .setProtocol("bolt") // 指定协议
-            .setDirectUrl("bolt://127.0.0.1:" + port) // 指定直连地址
+            .setInterfaceId(UserService.class.getName())
+            .setProtocol("bolt")
+            .setDirectUrl("bolt://" + host + ":" + port)
             .setTimeout(4000);
-        // 生成代理类
         userService = consumerConfig.refer();
         try {
             Thread.sleep(10000);

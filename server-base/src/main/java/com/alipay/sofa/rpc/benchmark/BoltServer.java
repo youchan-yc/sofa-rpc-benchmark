@@ -16,6 +16,7 @@
  */
 package com.alipay.sofa.rpc.benchmark;
 
+import com.alipay.sofa.rpc.benchmark.mosn.MosnApiClient;
 import com.alipay.sofa.rpc.benchmark.service.UserService;
 import com.alipay.sofa.rpc.benchmark.service.UserServiceServerImpl;
 import com.alipay.sofa.rpc.config.ProviderConfig;
@@ -29,21 +30,29 @@ public class BoltServer {
 
     public static void main(String[] args) {
         String port = System.getProperty("server.port", "12200");
-        ServerConfig serverConfig;
-        ProviderConfig<UserService> providerConfig;
-        serverConfig = new ServerConfig()
-            .setProtocol("bolt")
-            .setPort(Integer.parseInt(port));
+        int portInt = Integer.parseInt(port);
 
-        providerConfig = new ProviderConfig<UserService>()
+        ServerConfig serverConfig = new ServerConfig()
+            .setProtocol("bolt")
+            .setPort(portInt);
+
+        ProviderConfig<UserService> providerConfig = new ProviderConfig<UserService>()
             .setInterfaceId(UserService.class.getName())
             .setRef(new UserServiceServerImpl())
             .setServer(serverConfig);
 
         providerConfig.export();
 
-        LOGGER.info("Triple pojo server started on port {}", port);
+        LOGGER.info("Bolt server started on port {}", port);
         LOGGER.info("Service: {}", UserService.class.getName());
 
+        // Register service to mosn3 sidecar if mosn.enabled=true
+        if (Boolean.getBoolean("mosn.enabled")) {
+            String appName = System.getProperty("mosn.app.name", "sofa-rpc-benchmark-server");
+            MosnApiClient mosnClient = new MosnApiClient();
+            mosnClient.configApplication(appName);
+            mosnClient.publishService(UserService.class.getName(), "", "127.0.0.1", portInt, "bolt");
+            LOGGER.info("Service registered to mosn3: {}", UserService.class.getName());
+        }
     }
 }

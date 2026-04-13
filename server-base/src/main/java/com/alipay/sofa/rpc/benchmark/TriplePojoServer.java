@@ -16,6 +16,7 @@
  */
 package com.alipay.sofa.rpc.benchmark;
 
+import com.alipay.sofa.rpc.benchmark.mosn.MosnApiClient;
 import com.alipay.sofa.rpc.benchmark.service.UserPojoService;
 import com.alipay.sofa.rpc.benchmark.service.UserPojoServiceImpl;
 import com.alipay.sofa.rpc.config.ProviderConfig;
@@ -29,10 +30,11 @@ public class TriplePojoServer {
 
     public static void main(String[] args) {
         String port = System.getProperty("server.port", "50051");
+        int portInt = Integer.parseInt(port);
 
         ServerConfig serverConfig = new ServerConfig()
             .setProtocol("tri")
-            .setPort(Integer.parseInt(port))
+            .setPort(portInt)
             .setDaemon(false);
 
         ProviderConfig<UserPojoService> providerConfig = new ProviderConfig<UserPojoService>()
@@ -44,5 +46,14 @@ public class TriplePojoServer {
 
         LOGGER.info("Triple pojo server started on port {}", port);
         LOGGER.info("Service: {}", UserPojoService.class.getName());
+
+        // Register service to mosn3 sidecar if mosn.enabled=true
+        if (Boolean.getBoolean("mosn.enabled")) {
+            String appName = System.getProperty("mosn.app.name", "sofa-rpc-benchmark-server");
+            MosnApiClient mosnClient = new MosnApiClient();
+            mosnClient.configApplication(appName);
+            mosnClient.publishService(UserPojoService.class.getName(), "", "127.0.0.1", portInt, "tri");
+            LOGGER.info("Service registered to mosn3: {}", UserPojoService.class.getName());
+        }
     }
 }

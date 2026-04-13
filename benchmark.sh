@@ -2,7 +2,7 @@
 
 usage() {
     echo "Usage: ${PROGRAM_NAME} command dirname"
-    echo "command: [m|s|p|f|t]"
+    echo "command: [m|s|p|f|t|M|A|R]"
     echo "         -m [profiling|benchmark], specify benchmark mode"
     echo "         -s hostname, host name"
     echo "         -p port, port number"
@@ -11,6 +11,9 @@ usage() {
     echo "         -S serialization type (e.g. hessian2, protobuf, json)"
     echo "         -e other system property"
     echo "         -a other args"
+    echo "         -M enable mosn3 sidecar mode"
+    echo "         -A mosn3 API address (default: http://127.0.0.1:13330)"
+    echo "         -N mosn3 app name"
     echo "dirname: test module name"
 }
 
@@ -34,7 +37,14 @@ run() {
         JAR=`find ${PROJECT_DIR}/target/*.jar | head -n 1`
         echo
         echo "RUN ${PROJECT_DIR} IN ${MODE:-benchmark} MODE"
-        CMD="java ${JAVA_OPTIONS} -Dserver.host=${SERVER} -Dserver.port=${PORT} -Dserver.serialization=${SERIALIZATION} -Dbenchmark.output=${OUTPUT} -Dthread.num=${THREADNUM} ${SYSTEM_PROPS} -jar ${JAR} ${OTHERARGS}"
+
+        MOSN_PROPS=""
+        if [ "x${MOSN_ENABLED}" = "xtrue" ]; then
+            MOSN_PROPS="-Dmosn.enabled=true -Dmosn.api.address=${MOSN_API_ADDRESS} -Dmosn.app.name=${MOSN_APP_NAME}"
+            echo "MOSN3 sidecar mode enabled: api=${MOSN_API_ADDRESS}, app=${MOSN_APP_NAME}"
+        fi
+
+        CMD="java ${JAVA_OPTIONS} -Dserver.host=${SERVER} -Dserver.port=${PORT} -Dserver.serialization=${SERIALIZATION} -Dbenchmark.output=${OUTPUT} -Dthread.num=${THREADNUM} ${MOSN_PROPS} ${SYSTEM_PROPS} -jar ${JAR} ${OTHERARGS}"
         echo "command is: ${CMD}"
         echo
         ${CMD}
@@ -51,8 +61,11 @@ OTHERARGS=""
 THREADNUM=""
 SERIALIZATION=""
 SYSTEM_PROPS=""
+MOSN_ENABLED="false"
+MOSN_API_ADDRESS="http://127.0.0.1:13330"
+MOSN_APP_NAME="sofa-rpc-benchmark"
 
-while getopts "m:s:p:f:t:S:e:a:" opt; do
+while getopts "m:s:p:f:t:S:e:a:MA:N:" opt; do
     case "$opt" in
         m)
             MODE=${OPTARG}
@@ -77,6 +90,15 @@ while getopts "m:s:p:f:t:S:e:a:" opt; do
             ;;
         a)
             OTHERARGS=${OPTARG}
+            ;;
+        M)
+            MOSN_ENABLED="true"
+            ;;
+        A)
+            MOSN_API_ADDRESS=${OPTARG}
+            ;;
+        N)
+            MOSN_APP_NAME=${OPTARG}
             ;;
         ?)
             usage
