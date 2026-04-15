@@ -134,8 +134,8 @@ public class BoltClient extends AbstractClient {
     }
 
     @Benchmark
-    @BenchmarkMode({ Mode.Throughput })
-    @OutputTimeUnit(TimeUnit.SECONDS)
+    @BenchmarkMode({ Mode.Throughput, Mode.AverageTime, Mode.SampleTime })
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
     @Override
     public User verifyUser() throws Exception {
         return super.verifyUser();

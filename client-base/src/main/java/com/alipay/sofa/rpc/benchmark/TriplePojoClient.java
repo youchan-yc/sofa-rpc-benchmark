@@ -116,8 +116,8 @@ public class TriplePojoClient {
      * Unary benchmark: single synchronous request-response.
      */
     @Benchmark
-    @BenchmarkMode({ Mode.Throughput })
-    @OutputTimeUnit(TimeUnit.SECONDS)
+    @BenchmarkMode({ Mode.Throughput, Mode.AverageTime, Mode.SampleTime })
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public User unary() {
         long id = counter.getAndIncrement();
         return userPojoService.getUser(id);
@@ -128,8 +128,8 @@ public class TriplePojoClient {
      * Measures end-to-end latency including receiving all streamed responses.
      */
     @Benchmark
-    @BenchmarkMode({ Mode.Throughput })
-    @OutputTimeUnit(TimeUnit.SECONDS)
+    @BenchmarkMode({ Mode.Throughput, Mode.AverageTime, Mode.SampleTime })
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public int serverStream() throws InterruptedException {
         int pageNo = counter.getAndIncrement();
         CountDownLatch latch = new CountDownLatch(1);
@@ -159,8 +159,8 @@ public class TriplePojoClient {
      * Client streaming benchmark: send a batch of users, wait for server summary.
      */
     @Benchmark
-    @BenchmarkMode({ Mode.Throughput })
-    @OutputTimeUnit(TimeUnit.SECONDS)
+    @BenchmarkMode({ Mode.Throughput, Mode.AverageTime, Mode.SampleTime })
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public String clientStream() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
         final String[] result = { "" };
@@ -194,8 +194,8 @@ public class TriplePojoClient {
      * Bidirectional streaming benchmark: send users one by one, receive each verified response.
      */
     @Benchmark
-    @BenchmarkMode({ Mode.Throughput })
-    @OutputTimeUnit(TimeUnit.SECONDS)
+    @BenchmarkMode({ Mode.Throughput, Mode.AverageTime, Mode.SampleTime })
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public int biStream() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
         final int[] receivedCount = { 0 };

@@ -115,8 +115,8 @@ public class TripleProtoClient {
      * Unary benchmark: single synchronous request-response.
      */
     @Benchmark
-    @BenchmarkMode({ Mode.Throughput })
-    @OutputTimeUnit(TimeUnit.SECONDS)
+    @BenchmarkMode({ Mode.Throughput, Mode.AverageTime, Mode.SampleTime })
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public GetUserResponse unary() {
         long id = counter.getAndIncrement();
         return userService.getUser(GetUserRequest.newBuilder().setId(id).build());
@@ -126,8 +126,8 @@ public class TripleProtoClient {
      * Server streaming benchmark: one request, server pushes back a page of users.
      */
     @Benchmark
-    @BenchmarkMode({ Mode.Throughput })
-    @OutputTimeUnit(TimeUnit.SECONDS)
+    @BenchmarkMode({ Mode.Throughput, Mode.AverageTime, Mode.SampleTime })
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public int serverStream() throws InterruptedException {
         int pageNo = counter.getAndIncrement();
         CountDownLatch latch = new CountDownLatch(1);
@@ -159,8 +159,8 @@ public class TripleProtoClient {
      * Client streaming benchmark: send a batch of users, wait for server summary.
      */
     @Benchmark
-    @BenchmarkMode({ Mode.Throughput })
-    @OutputTimeUnit(TimeUnit.SECONDS)
+    @BenchmarkMode({ Mode.Throughput, Mode.AverageTime, Mode.SampleTime })
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public int clientStream() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
         final int[] result = { 0 };
@@ -201,8 +201,8 @@ public class TripleProtoClient {
      * Bidirectional streaming benchmark: send users one by one, receive each verified response.
      */
     @Benchmark
-    @BenchmarkMode({ Mode.Throughput })
-    @OutputTimeUnit(TimeUnit.SECONDS)
+    @BenchmarkMode({ Mode.Throughput, Mode.AverageTime, Mode.SampleTime })
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public int biStream() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
         final int[] receivedCount = { 0 };

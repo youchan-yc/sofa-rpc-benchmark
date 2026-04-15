@@ -35,5 +35,7 @@ replay_pid*
 *.jfr
 
 # jmh output
-jmh-result.json
+jmh-result*.json
+jmh-result*.csv
+jmh-result*.txt
 build

@@ -23,10 +23,14 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.openjdk.jmh.profile.GCProfiler;
 import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.options.ChainedOptionsBuilder;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class JMHHelper {
 
@@ -36,12 +40,16 @@ public class JMHHelper {
         options.addOption(Option.builder().longOpt("warmupTime").hasArg().build());
         options.addOption(Option.builder().longOpt("measurementIterations").hasArg().build());
         options.addOption(Option.builder().longOpt("measurementTime").hasArg().build());
+        options.addOption(Option.builder().longOpt("forks").hasArg().build());
+        options.addOption(Option.builder().longOpt("enableGcProfiler").hasArg().build());
         CommandLineParser parser = new DefaultParser();
         CommandLine line = parser.parse(options, args);
-        int warmupIterations = Integer.parseInt(line.getOptionValue("warmupIterations", "1"));
+        int warmupIterations = Integer.parseInt(line.getOptionValue("warmupIterations", "3"));
         int warmupTime = Integer.parseInt(line.getOptionValue("warmupTime", "10"));
-        int measurementIterations = Integer.parseInt(line.getOptionValue("measurementIterations", "1"));
-        int measurementTime = Integer.parseInt(line.getOptionValue("measurementTime", "120"));
+        int measurementIterations = Integer.parseInt(line.getOptionValue("measurementIterations", "3"));
+        int measurementTime = Integer.parseInt(line.getOptionValue("measurementTime", "60"));
+        int forks = Integer.parseInt(line.getOptionValue("forks", "1"));
+        boolean enableGcProfiler = Boolean.parseBoolean(line.getOptionValue("enableGcProfiler", "true"));
         String format = System.getProperty("result.format", "JSON");
         String output = System.getProperty("benchmark.output");
         ChainedOptionsBuilder optBuilder = new OptionsBuilder()
@@ -49,9 +57,18 @@ public class JMHHelper {
             .warmupTime(TimeValue.seconds(warmupTime))
             .measurementIterations(measurementIterations)
             .measurementTime(TimeValue.seconds(measurementTime))
+            .forks(forks)
             .timeout(TimeValue.minutes(30));
+        if (enableGcProfiler) {
+            optBuilder.addProfiler(GCProfiler.class);
+        }
         if (StringUtil.isNotBlank(format)) {
-            optBuilder.resultFormat(ResultFormatType.valueOf(format.toUpperCase()));
+            ResultFormatType resultFormatType = ResultFormatType.valueOf(format.toUpperCase());
+            optBuilder.resultFormat(resultFormatType);
+            String suffix = resultFormatType == ResultFormatType.JSON ? ".json"
+                : resultFormatType == ResultFormatType.CSV ? ".csv" : ".txt";
+            String timestamp = new SimpleDateFormat("yyyyMMddHHmm").format(new Date());
+            optBuilder.result("jmh-result-" + timestamp + suffix);
         }
         if (StringUtil.isNotBlank(output)) {
             optBuilder.output(output);
