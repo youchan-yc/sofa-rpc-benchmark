@@ -56,21 +56,18 @@ public class TripleProtoClient {
 
     private static int                                               CONCURRENCY = 32;
 
-    private final SofaUserServiceTriple.IUserService                 userService;
+    private static String                                            resolvedHost;
+    private static String                                            resolvedPort;
 
-    private final ConsumerConfig<SofaUserServiceTriple.IUserService> consumerConfig;
-
-    private final AtomicInteger                                      counter     = new AtomicInteger(0);
-
-    public TripleProtoClient() {
-        String host = System.getProperty("server.host", "127.0.0.1");
-        String port = System.getProperty("server.port", "50052");
+    static {
+        resolvedHost = System.getProperty("server.host", "127.0.0.1");
+        resolvedPort = System.getProperty("server.port", "50052");
         String threadNum = System.getProperty("thread.num");
         if (StringUtil.isNotBlank(threadNum)) {
             CONCURRENCY = Integer.parseInt(threadNum);
         }
 
-        // When mosn.enabled=true, subscribe via mosn3 API and use the returned address
+        // Resolve MOSN endpoint once per JVM to avoid repeated API calls across benchmark modes
         if (Boolean.getBoolean("mosn.enabled")) {
             String appName = System.getProperty("mosn.app.name", "sofa-rpc-benchmark-client");
             MosnApiClient mosnClient = new MosnApiClient();
@@ -79,8 +76,8 @@ public class TripleProtoClient {
                 SofaUserServiceTriple.IUserService.class.getName(), "");
             if (!endpoints.isEmpty()) {
                 MosnApiClient.SubscribeEndpoint endpoint = endpoints.get(0);
-                host = endpoint.getHost();
-                port = String.valueOf(endpoint.getPort());
+                resolvedHost = endpoint.getHost();
+                resolvedPort = String.valueOf(endpoint.getPort());
                 LOGGER.info("Subscribed via mosn3, using endpoint: {}", endpoint.getAddress());
             } else {
                 LOGGER.warn("No endpoints returned from mosn3 subscribe, falling back to direct address");
@@ -92,11 +89,20 @@ public class TripleProtoClient {
             System.setProperty("http.nonProxyHosts",
                 nonProxyHosts.isEmpty() ? "localhost|127.0.0.1" : nonProxyHosts + "|localhost|127.0.0.1");
         }
+    }
+
+    private final SofaUserServiceTriple.IUserService                 userService;
+
+    private final ConsumerConfig<SofaUserServiceTriple.IUserService> consumerConfig;
+
+    private final AtomicInteger                                      counter     = new AtomicInteger(0);
+
+    public TripleProtoClient() {
         consumerConfig = new ConsumerConfig<SofaUserServiceTriple.IUserService>()
             .setRepeatedReferLimit(10)
             .setInterfaceId(SofaUserServiceTriple.IUserService.class.getName())
             .setProtocol("tri")
-            .setDirectUrl("tri://" + host + ":" + port)
+            .setDirectUrl("tri://" + resolvedHost + ":" + resolvedPort)
             .setTimeout(4000);
         userService = consumerConfig.refer();
         try {

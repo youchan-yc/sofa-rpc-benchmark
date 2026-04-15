@@ -48,19 +48,18 @@ public class BoltClient extends AbstractClient {
 
     private static int                        CONCURRENCY = 32;
 
-    private final UserService                 userService;
+    private static String                     resolvedHost;
+    private static String                     resolvedPort;
 
-    private final ConsumerConfig<UserService> consumerConfig;
-
-    public BoltClient() {
-        String port = System.getProperty("server.port", "12200");
-        String host = System.getProperty("server.host", "127.0.0.1");
+    static {
+        resolvedHost = System.getProperty("server.host", "127.0.0.1");
+        resolvedPort = System.getProperty("server.port", "12200");
         String threadNum = System.getProperty("thread.num");
         if (StringUtil.isNotBlank(threadNum)) {
             CONCURRENCY = Integer.parseInt(threadNum);
         }
 
-        // When mosn.enabled=true, subscribe via mosn3 API and use the returned address
+        // Resolve MOSN endpoint once per JVM to avoid repeated API calls across benchmark modes
         if (Boolean.getBoolean("mosn.enabled")) {
             String appName = System.getProperty("mosn.app.name", "sofa-rpc-benchmark-client");
             MosnApiClient mosnClient = new MosnApiClient();
@@ -69,19 +68,25 @@ public class BoltClient extends AbstractClient {
                 UserService.class.getName(), "");
             if (!endpoints.isEmpty()) {
                 MosnApiClient.SubscribeEndpoint endpoint = endpoints.get(0);
-                host = endpoint.getHost();
-                port = String.valueOf(endpoint.getPort());
+                resolvedHost = endpoint.getHost();
+                resolvedPort = String.valueOf(endpoint.getPort());
                 LOGGER.info("Subscribed via mosn3, using endpoint: {}", endpoint.getAddress());
             } else {
                 LOGGER.warn("No endpoints returned from mosn3 subscribe, falling back to direct address");
             }
         }
+    }
 
+    private final UserService                 userService;
+
+    private final ConsumerConfig<UserService> consumerConfig;
+
+    public BoltClient() {
         consumerConfig = new ConsumerConfig<UserService>()
             .setRepeatedReferLimit(10)
             .setInterfaceId(UserService.class.getName())
             .setProtocol("bolt")
-            .setDirectUrl("bolt://" + host + ":" + port)
+            .setDirectUrl("bolt://" + resolvedHost + ":" + resolvedPort)
             .setTimeout(4000);
         userService = consumerConfig.refer();
         try {
