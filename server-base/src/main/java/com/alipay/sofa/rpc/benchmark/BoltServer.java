@@ -29,11 +29,14 @@ public class BoltServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(BoltServer.class);
 
     public static void main(String[] args) {
+        String host = System.getProperty("server.host", "0.0.0.0");
         String port = System.getProperty("server.port", "12200");
         int portInt = Integer.parseInt(port);
 
         ServerConfig serverConfig = new ServerConfig()
             .setProtocol("bolt")
+            .setHost(host)
+            .setBoundHost(host)
             .setPort(portInt);
 
         ProviderConfig<UserService> providerConfig = new ProviderConfig<UserService>()
