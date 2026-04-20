@@ -69,7 +69,7 @@ public class TriplePojoClient {
             MosnApiClient mosnClient = new MosnApiClient();
             mosnClient.configApplication(appName);
             List<MosnApiClient.SubscribeEndpoint> endpoints = mosnClient.subscribeService(
-                UserPojoService.class.getName(), "");
+                "com.alipay.sofa.rpc.benchmark.proto.UserService", "");
             if (!endpoints.isEmpty()) {
                 MosnApiClient.SubscribeEndpoint endpoint = endpoints.get(0);
                 resolvedHost = endpoint.getHost();

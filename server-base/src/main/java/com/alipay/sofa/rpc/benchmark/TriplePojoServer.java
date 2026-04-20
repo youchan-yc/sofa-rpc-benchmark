@@ -52,7 +52,8 @@ public class TriplePojoServer {
             String appName = System.getProperty("mosn.app.name", "sofa-rpc-benchmark-server");
             MosnApiClient mosnClient = new MosnApiClient();
             mosnClient.configApplication(appName);
-            mosnClient.publishService(UserPojoService.class.getName(), "", "127.0.0.1", portInt, "tri");
+            mosnClient.publishService("com.alipay.sofa.rpc.benchmark.proto.UserService", "", "127.0.0.1", portInt,
+                "tri");
             LOGGER.info("Service registered to mosn3: {}", UserPojoService.class.getName());
         }
     }

@@ -60,7 +60,7 @@ public class TripleProtoServer {
             String appName = System.getProperty("mosn.app.name", "sofa-rpc-benchmark-server");
             MosnApiClient mosnClient = new MosnApiClient();
             mosnClient.configApplication(appName);
-            mosnClient.publishService(SofaUserServiceTriple.IUserService.class.getName(), "", "127.0.0.1", portInt,
+            mosnClient.publishService("com.alipay.sofa.rpc.benchmark.proto.UserService", "", "127.0.0.1", portInt,
                 "tri");
             LOGGER.info("Service registered to mosn3: {}", SofaUserServiceTriple.getServiceName());
         }

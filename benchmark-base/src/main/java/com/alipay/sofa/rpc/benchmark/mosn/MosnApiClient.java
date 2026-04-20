@@ -165,11 +165,11 @@ public class MosnApiClient {
         }
 
         // Check code field
-        int codeIndex = json.indexOf("\"code\"");
-        if (codeIndex < 0) {
-            LOGGER.warn("mosn3 subscribe response missing 'code' field: {}", json);
-            return Collections.emptyList();
-        }
+//        int codeIndex = json.indexOf("\"code\"");
+//        if (codeIndex < 0) {
+//            LOGGER.warn("mosn3 subscribe response missing 'code' field: {}", json);
+//            return Collections.emptyList();
+//        }
 
         // Find endpoints array
         int endpointsStart = json.indexOf("\"endpoints\"");
